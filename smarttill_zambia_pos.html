@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartTill Zambia - Professional POS & Inventory System</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              800: '#1e293b',
+              900: '#0f172a',
+            },
+            brand: {
+              blue: '#2563eb',
+              gold: '#f59e0b',
+              hover: '#1d4ed8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- HTML5 QR Code Barcode Scanner -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Print Styles for Receipts */
+    @media print {
+      body * { visibility: hidden; }
+      #printableReceipt, #printableReceipt * { visibility: visible; }
+      #printableReceipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+        box-shadow: none;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- ================= AUTH CONTAINER ================= -->
+  <div id="authContainer" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100">
+      <div class="bg-navy-900 p-6 text-center text-white relative">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-gold text-slate-900 text-2xl font-bold mb-3 shadow-lg">
+          <i class="fa-solid font-bold fa-bolt"></i>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">SmartTill <span class="text-brand-gold">Zambia</span></h1>
+        <p class="text-xs text-slate-400 mt-1">Commercial POS & Inventory System</p>
+      </div>
+
+      <!-- Login Form -->
+      <div id="loginForm" class="p-6 space-y-4">
+        <h2 class="text-xl font-bold text-slate-800">Sign In to Your Workspace</h2>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
+          <input type="email" id="loginEmail" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none" placeholder="owner@business.zm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+          <input type="password" id="loginPassword" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none" placeholder="••••••••">
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <button type="button" onclick="showForgotPassword()" class="text-brand-blue hover:underline">Forgot Password?</button>
+        </div>
+        <button onclick="handleLogin()" id="btnLogin" class="w-full bg-brand-blue hover:bg-brand-hover text-white py-2.5 rounded-lg font-semibold text-sm shadow transition duration-150 flex items-center justify-center">
+          <span>Sign In</span>
+        </button>
+        <p class="text-xs text-center text-slate-500 pt-2">
+          New business? <button onclick="toggleAuthMode('register')" class="text-brand-blue font-semibold hover:underline">Register SmartTill</button>
+        </p>
+      </div>
+
+      <!-- Registration Form -->
+      <div id="registerForm" class="p-6 space-y-4 hidden">
+        <h2 class="text-xl font-bold text-slate-800">Register New Business</h2>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Business Name</label>
+          <input type="text" id="regBusinessName" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none" placeholder="Lusaka Supermarket Store">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
+          <input type="email" id="regEmail" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none" placeholder="owner@business.zm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+          <input type="password" id="regPassword" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none" placeholder="••••••••">
+        </div>
+        <button onclick="handleRegister()" id="btnRegister" class="w-full bg-brand-blue hover:bg-brand-hover text-white py-2.5 rounded-lg font-semibold text-sm shadow transition duration-150 flex items-center justify-center">
+          <span>Create Business Workspace</span>
+        </button>
+        <p class="text-xs text-center text-slate-500 pt-2">
+          Already registered? <button onclick="toggleAuthMode('login')" class="text-brand-blue font-semibold hover:underline">Sign In</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP LAYOUT ================= -->
+  <div id="appLayout" class="hidden flex-1 flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-full md:w-64 bg-navy-900 text-slate-300 flex flex-col flex-shrink-0 z-20 border-r border-slate-800">
+      <div class="p-4 flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-lg bg-brand-gold text-navy-900 flex items-center justify-center font-bold text-lg shadow">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div>
+            <h2 id="sidebarBusinessName" class="font-bold text-white text-sm leading-tight truncate w-36">SmartTill</h2>
+            <span class="text-[10px] bg-slate-800 text-brand-gold px-1.5 py-0.5 rounded font-medium border border-slate-700">ZAMBIA POS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav List -->
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-white bg-slate-800">
+          <i class="fa-solid fa-chart-pie w-5 text-brand-gold"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="switchView('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-cash-register w-5 text-blue-400"></i>
+          <span>Point of Sale</span>
+        </button>
+        <button onclick="switchView('products')" id="nav-products" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-boxes-stacked w-5 text-emerald-400"></i>
+          <span>Products & Stock</span>
+        </button>
+        <button onclick="switchView('sales')" id="nav-sales" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-receipt w-5 text-purple-400"></i>
+          <span>Sales History</span>
+        </button>
+        <button onclick="switchView('customers')" id="nav-customers" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-users w-5 text-amber-400"></i>
+          <span>Customers</span>
+        </button>
+        <button onclick="switchView('expenses')" id="nav-expenses" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-wallet w-5 text-rose-400"></i>
+          <span>Expenses</span>
+        </button>
+        <button onclick="switchView('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-chart-line w-5 text-indigo-400"></i>
+          <span>Reports & Analytics</span>
+        </button>
+        <button onclick="switchView('staff')" id="nav-staff" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-user-shield w-5 text-cyan-400"></i>
+          <span>Staff Management</span>
+        </button>
+        <button onclick="switchView('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+          <i class="fa-solid fa-gear w-5 text-slate-400"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- User Profile Footer -->
+      <div class="p-3 border-t border-slate-800 bg-navy-950 flex items-center justify-between">
+        <div class="flex items-center space-x-2 truncate">
+          <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-white" id="userAvatar">U</div>
+          <div class="truncate">
+            <p id="userEmailDisplay" class="text-xs font-semibold text-slate-200 truncate">user@smarttill.zm</p>
+            <span class="text-[10px] text-emerald-400 font-medium"><i class="fa-solid fa-circle text-[8px]"></i> Online</span>
+          </div>
+        </div>
+        <button onclick="handleLogout()" title="Sign Out" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT WORKSPACE -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
+      <!-- Top Header -->
+      <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm z-10">
+        <div class="flex items-center space-x-4">
+          <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard</h1>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="switchView('pos')" class="bg-brand-blue hover:bg-brand-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center space-x-2 transition">
+            <i class="fa-solid fa-cash-register"></i>
+            <span>Open POS Till</span>
+          </button>
+          <div class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 font-medium hidden sm:block">
+            Currency: <span class="font-bold text-slate-800" id="currencyDisplay">ZMW (K)</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- DYNAMIC VIEWS -->
+      <div class="flex-1 overflow-y-auto p-4 md:p-6" id="viewContainer">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="space-y-6">
+          <!-- Summary Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Revenue</p>
+                <h3 class="text-2xl font-bold text-slate-900 mt-1" id="dashTodayRevenue">K0.00</h3>
+                <span class="text-xs text-emerald-600 font-medium"><i class="fa-solid fa-circle-check"></i> Updated Live</span>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center text-xl">
+                <i class="fa-solid fa-money-bill-wave"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Transactions</p>
+                <h3 class="text-2xl font-bold text-slate-900 mt-1" id="dashTodayTxnCount">0</h3>
+                <span class="text-xs text-slate-500 font-medium">Completed Tills</span>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Est. Gross Profit</p>
+                <h3 class="text-2xl font-bold text-slate-900 mt-1" id="dashGrossProfit">K0.00</h3>
+                <span class="text-xs text-indigo-600 font-medium">Margin Metric</span>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low Stock Warning</p>
+                <h3 class="text-2xl font-bold text-amber-600 mt-1" id="dashLowStockCount">0</h3>
+                <span class="text-xs text-amber-600 font-medium">Items need restock</span>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mid Section: Recent Sales & Quick Shortcuts -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Recent Transactions -->
+            <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-base">Recent Till Sales</h3>
+                <button onclick="switchView('sales')" class="text-xs text-brand-blue font-semibold hover:underline">View All</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 text-[11px] uppercase tracking-wider font-semibold text-slate-400">
+                      <th class="py-2 px-3">Receipt #</th>
+                      <th class="py-2 px-3">Time</th>
+                      <th class="py-2 px-3">Method</th>
+                      <th class="py-2 px-3 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashRecentSalesTable" class="text-xs divide-y divide-slate-100">
+                    <tr><td colspan="4" class="text-center py-4 text-slate-400">No transactions recorded today.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Best Sellers / Quick Actions -->
+            <div class="space-y-6">
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <h3 class="font-bold text-slate-800 text-base mb-3">Top Performing Products</h3>
+                <div id="dashTopProductsList" class="space-y-3 text-xs">
+                  <p class="text-slate-400">No sales data yet.</p>
+                </div>
+              </div>
+
+              <div class="bg-navy-900 rounded-xl p-5 text-white shadow-md">
+                <h3 class="font-bold text-brand-gold text-sm mb-2">SmartTill Zambia</h3>
+                <p class="text-xs text-slate-300 mb-4">Manage products, scan barcodes, complete checkouts & track net profit in real time.</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <button onclick="openAddProductModal()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-center font-medium border border-slate-700">
+                    + Add Product
+                  </button>
+                  <button onclick="openAddExpenseModal()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-center font-medium border border-slate-700">
+                    + Record Expense
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. POINT OF SALE VIEW -->
+        <section id="view-pos" class="hidden h-full flex flex-col lg:flex-row gap-6">
+          <!-- Catalog & Search -->
+          <div class="lg:w-7/12 flex flex-col space-y-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-2">
+              <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                <input type="text" id="posSearchInput" oninput="renderPosCatalog()" placeholder="Search product name, category, or barcode..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none">
+              </div>
+              <button onclick="openBarcodeScanner()" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition shadow">
+                <i class="fa-solid fa-barcode text-brand-gold"></i>
+                <span class="hidden sm:inline">Scan</span>
+              </button>
+            </div>
+
+            <!-- Product Grid -->
+            <div id="posCatalogGrid" class="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[calc(100vh-220px)] p-1">
+              <!-- Catalog cards injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Checkout & Cart -->
+          <div class="lg:w-5/12 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-[calc(100vh-140px)]">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                <i class="fa-solid fa-cart-shopping text-brand-blue"></i> Till Checkout
+              </h2>
+              <button onclick="clearCart()" class="text-xs text-rose-600 hover:underline font-semibold">Clear Cart</button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="flex-1 overflow-y-auto p-4 divide-y divide-slate-100" id="posCartList">
+              <div class="text-center py-12 text-slate-400 text-xs">
+                <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-slate-300"></i>
+                <p>Cart is empty. Select products from the left catalog.</p>
+              </div>
+            </div>
+
+            <!-- Customer & Discounts -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Customer</label>
+                  <select id="posCustomerSelect" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white">
+                    <option value="">Walk-in Customer</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">Discount (K)</label>
+                  <input type="number" id="posDiscountInput" min="0" value="0" oninput="updateCartTotals()" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white">
+                </div>
+              </div>
+
+              <!-- Calculation Rows -->
+              <div class="space-y-1 text-xs border-t border-slate-200 pt-2">
+                <div class="flex justify-between text-slate-600">
+                  <span>Subtotal:</span>
+                  <span font-semibold id="posSubtotalText">K0.00</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                  <span>Discount:</span>
+                  <span class="text-rose-600" id="posDiscountText">-K0.00</span>
+                </div>
+                <div class="flex justify-between text-base font-bold text-slate-900 pt-1 border-t border-slate-300">
+                  <span>Grand Total:</span>
+                  <span class="text-brand-blue" id="posGrandTotalText">K0.00</span>
+                </div>
+              </div>
+
+              <!-- Payment Method Selection -->
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Payment Method</label>
+                <select id="posPaymentMethod" onchange="togglePayRefField()" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white font-semibold">
+                  <option value="Cash">Cash Payment</option>
+                  <option value="MTN Mobile Money">MTN Mobile Money</option>
+                  <option value="Airtel Money">Airtel Money</option>
+                  <option value="Zamtel Kwacha">Zamtel Kwacha</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Debit/Credit Card">Debit/Credit Card</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div id="posPayRefContainer" class="hidden">
+                <input type="text" id="posPayReference" placeholder="Mobile / Bank Transaction Ref ID..." class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white">
+              </div>
+
+              <button onclick="processCheckout()" id="btnCheckout" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm shadow flex items-center justify-center space-x-2 transition">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>Complete Till Sale</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. PRODUCTS & INVENTORY VIEW -->
+        <section id="view-products" class="hidden space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+              <input type="text" id="productSearchInput" oninput="renderProductsTable()" placeholder="Search products or barcode..." class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none w-full sm:w-64">
+              <select id="productCategoryFilter" onchange="renderProductsTable()" class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none bg-white">
+                <option value="ALL">All Categories</option>
+              </select>
+            </div>
+            <button onclick="openAddProductModal()" class="w-full sm:w-auto bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 rounded-lg text-sm font-semibold shadow flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add New Product</span>
+            </button>
+          </div>
+
+          <!-- Product Table -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Item Name</th>
+                  <th class="py-3 px-4">Barcode / SKU</th>
+                  <th class="py-3 px-4">Category</th>
+                  <th class="py-3 px-4 text-right">Cost Price</th>
+                  <th class="py-3 px-4 text-right">Selling Price</th>
+                  <th class="py-3 px-4 text-center">Stock</th>
+                  <th class="py-3 px-4 text-right">Est. Unit Profit</th>
+                  <th class="py-3 px-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody" class="text-xs divide-y divide-slate-100">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4. SALES HISTORY VIEW -->
+        <section id="view-sales" class="hidden space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <input type="text" id="salesSearchInput" oninput="renderSalesHistory()" placeholder="Search Receipt # or Customer..." class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none">
+              <input type="date" id="salesDateFilter" onchange="renderSalesHistory()" class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none bg-white">
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Receipt #</th>
+                  <th class="py-3 px-4">Date & Time</th>
+                  <th class="py-3 px-4">Customer</th>
+                  <th class="py-3 px-4">Method</th>
+                  <th class="py-3 px-4 text-right">Total (K)</th>
+                  <th class="py-3 px-4 text-right">Est. Profit (K)</th>
+                  <th class="py-3 px-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="salesHistoryTableBody" class="text-xs divide-y divide-slate-100">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. CUSTOMERS VIEW -->
+        <section id="view-customers" class="hidden space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h3 class="font-bold text-slate-800 text-sm">Customer Database</h3>
+            <button onclick="openCustomerModal()" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
+              + Add Customer
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Customer Name</th>
+                  <th class="py-3 px-4">Phone Number</th>
+                  <th class="py-3 px-4">Email</th>
+                  <th class="py-3 px-4">Address</th>
+                  <th class="py-3 px-4 text-right">Lifetime Total Spent</th>
+                </tr>
+              </thead>
+              <tbody id="customersTableBody" class="text-xs divide-y divide-slate-100">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 6. EXPENSES VIEW -->
+        <section id="view-expenses" class="hidden space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase">Total Recorded Expenses</p>
+              <h2 class="text-xl font-bold text-rose-600" id="totalExpenseSummary">K0.00</h2>
+            </div>
+            <button onclick="openAddExpenseModal()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
+              + Record New Expense
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Title / Reason</th>
+                  <th class="py-3 px-4">Category</th>
+                  <th class="py-3 px-4">Date</th>
+                  <th class="py-3 px-4">Method</th>
+                  <th class="py-3 px-4 text-right">Amount (K)</th>
+                  <th class="py-3 px-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="expensesTableBody" class="text-xs divide-y divide-slate-100">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. REPORTS & ANALYTICS VIEW -->
+        <section id="view-reports" class="hidden space-y-6">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-4">
+            <h2 class="font-bold text-slate-800 text-lg">Financial Overview</h2>
+            <div class="flex gap-2">
+              <button onclick="exportSalesCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
+                <i class="fa-solid fa-file-csv"></i> Export Sales CSV
+              </button>
+              <button onclick="exportBackupJSON()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
+                <i class="fa-solid fa-download"></i> Full JSON Backup
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial Breakdown Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold text-slate-500 uppercase">Gross Revenue</p>
+              <p class="text-2xl font-bold text-slate-900 mt-1" id="repTotalRevenue">K0.00</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold text-slate-500 uppercase">Gross Profit</p>
+              <p class="text-2xl font-bold text-emerald-600 mt-1" id="repGrossProfit">K0.00</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold text-slate-500 uppercase">Total Expenses</p>
+              <p class="text-2xl font-bold text-rose-600 mt-1" id="repTotalExpenses">K0.00</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold text-slate-500 uppercase">Est. Net Profit</p>
+              <p class="text-2xl font-bold text-blue-600 mt-1" id="repNetProfit">K0.00</p>
+            </div>
+          </div>
+
+          <!-- Inventory Valuation -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <h3 class="font-bold text-slate-800 text-sm mb-2">Inventory Cost Valuation</h3>
+              <p class="text-2xl font-bold text-slate-800" id="repInventoryCostVal">K0.00</p>
+              <p class="text-xs text-slate-500 mt-1">Total capital bound in stock at cost price.</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <h3 class="font-bold text-slate-800 text-sm mb-2">Inventory Retail Valuation</h3>
+              <p class="text-2xl font-bold text-brand-blue" id="repInventoryRetailVal">K0.00</p>
+              <p class="text-xs text-slate-500 mt-1">Total projected revenue if all stock sold.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. STAFF MANAGEMENT VIEW -->
+        <section id="view-staff" class="hidden space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h3 class="font-bold text-slate-800 text-sm">Staff & Till Users</h3>
+            <button onclick="openStaffModal()" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
+              + Add Staff Member
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Full Name</th>
+                  <th class="py-3 px-4">Email</th>
+                  <th class="py-3 px-4">Phone</th>
+                  <th class="py-3 px-4">Assigned Role</th>
+                  <th class="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody" class="text-xs divide-y divide-slate-100">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 9. SETTINGS VIEW -->
+        <section id="view-settings" class="hidden space-y-6 max-w-3xl">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h2 class="font-bold text-slate-800 text-lg border-b border-slate-100 pb-3">Business Profile & Receipts</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Business Name</label>
+                <input type="text" id="setBusinessName" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
+                <input type="text" id="setPhone" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none" placeholder="+260 97 ...">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Address / Location</label>
+                <input type="text" id="setAddress" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none" placeholder="Cairo Road, Lusaka">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Zambia TPIN Number</label>
+                <input type="text" id="setTPIN" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none" placeholder="1000000000">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Currency Symbol</label>
+                <input type="text" id="setCurrency" value="ZMW (K)" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Receipt Footer Note</label>
+                <input type="text" id="setReceiptFooter" class="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none" placeholder="Thank you for shopping with us!">
+              </div>
+            </div>
+
+            <button onclick="saveBusinessSettings()" class="bg-brand-blue hover:bg-brand-hover text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow">
+              Save Settings
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- PRODUCT MODAL (ADD / EDIT) -->
+  <div id="productModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="bg-navy-900 px-5 py-3 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm" id="productModalTitle">Add New Product</h3>
+        <button onclick="closeModal('productModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="productForm" onsubmit="handleSaveProduct(event)" class="p-5 space-y-3">
+        <input type="hidden" id="prodId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Product Name</label>
+          <input type="text" id="prodName" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+            <input type="text" id="prodCategory" required placeholder="Groceries, Beverages..." class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Barcode / SKU</label>
+            <input type="text" id="prodBarcode" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Cost Price (K)</label>
+            <input type="number" step="0.01" id="prodCost" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Selling Price (K)</label>
+            <input type="number" step="0.01" id="prodPrice" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Quantity</label>
+            <input type="number" id="prodStock" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Low Stock Threshold</label>
+            <input type="number" id="prodMinStock" value="5" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('productModal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 text-xs font-semibold rounded-lg shadow">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EXPENSE MODAL -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="bg-navy-900 px-5 py-3 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm">Record Business Expense</h3>
+        <button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveExpense(event)" class="p-5 space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Title / Expense Reason</label>
+          <input type="text" id="expTitle" required placeholder="Electricity Bill, Rent, Transport..." class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+            <input type="text" id="expCategory" required placeholder="Utilities, Stock, Salary" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Amount (K)</label>
+            <input type="number" step="0.01" id="expAmount" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+            <input type="date" id="expDate" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Method</label>
+            <select id="expPaymentMethod" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white">
+              <option value="Cash">Cash</option>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('expenseModal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-xs font-semibold rounded-lg shadow">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CUSTOMER MODAL -->
+  <div id="customerModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="bg-navy-900 px-5 py-3 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm">Add New Customer</h3>
+        <button onclick="closeModal('customerModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveCustomer(event)" class="p-5 space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Full Name</label>
+          <input type="text" id="custName" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
+            <input type="text" id="custPhone" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+            <input type="email" id="custEmail" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Address</label>
+          <input type="text" id="custAddress" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('customerModal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 text-xs font-semibold rounded-lg shadow">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- STAFF MODAL -->
+  <div id="staffModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="bg-navy-900 px-5 py-3 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm">Add Staff Member</h3>
+        <button onclick="closeModal('staffModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveStaff(event)" class="p-5 space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+          <input type="text" id="stfName" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
+          <input type="email" id="stfEmail" required class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
+            <input type="text" id="stfPhone" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Role</label>
+            <select id="stfRole" class="w-full p-2 text-xs border border-slate-300 rounded-lg focus:outline-none bg-white">
+              <option value="Cashier">Cashier</option>
+              <option value="Manager">Manager</option>
+              <option value="Owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('staffModal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 text-xs font-semibold rounded-lg shadow">Add Staff</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BARCODE SCANNER MODAL -->
+  <div id="scannerModal" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden text-center">
+      <div class="bg-navy-900 px-4 py-3 text-white flex justify-between items-center">
+        <h3 class="font-bold text-xs">Scan Barcode / QR Code</h3>
+        <button onclick="closeBarcodeScanner()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-4">
+        <div id="reader" class="w-full rounded-lg overflow-hidden border border-slate-300 bg-slate-100"></div>
+        <p class="text-[11px] text-slate-500 mt-2">Position the product barcode within the camera viewfinder.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINTABLE RECEIPT MODAL -->
+  <div id="receiptModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+      <div class="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center no-print">
+        <h3 class="font-bold text-xs text-slate-700">Sale Receipt</h3>
+        <div class="space-x-1">
+          <button onclick="window.print()" class="bg-brand-blue text-white px-3 py-1 rounded text-xs font-semibold"><i class="fa-solid fa-print"></i> Print</button>
+          <button onclick="closeModal('receiptModal')" class="text-slate-500 hover:text-slate-800 px-2 py-1 text-xs">Close</button>
+        </div>
+      </div>
+
+      <div id="printableReceipt" class="p-6 text-slate-800 font-mono text-xs space-y-3">
+        <div class="text-center border-b border-slate-300 pb-3">
+          <h2 class="font-bold text-base uppercase" id="recBusinessName">SMARTTILL ZAMBIA</h2>
+          <p class="text-[10px]" id="recAddress">Lusaka, Zambia</p>
+          <p class="text-[10px]" id="recPhone">Tel: +260 970 000000</p>
+          <p class="text-[10px]" id="recTPIN">TPIN: 1000000000</p>
+        </div>
+
+        <div class="text-[10px] space-y-0.5 border-b border-slate-300 pb-2">
+          <div class="flex justify-between"><span>Receipt #:</span><span id="recNumber" class="font-bold">#0000</span></div>
+          <div class="flex justify-between"><span>Date:</span><span id="recDate">--</span></div>
+          <div class="flex justify-between"><span>Customer:</span><span id="recCustomer">Walk-in</span></div>
+          <div class="flex justify-between"><span>Payment:</span><span id="recPayment">Cash</span></div>
+          <div id="recRefRow" class="flex justify-between hidden"><span>Ref ID:</span><span id="recRef">--</span></div>
+        </div>
+
+        <table class="w-full text-left border-b border-slate-300 pb-2">
+          <thead>
+            <tr class="text-[10px] uppercase border-b border-slate-200">
+              <th class="py-1">Item</th>
+              <th class="py-1 text-center">Qty</th>
+              <th class="py-1 text-right">Amt</th>
+            </tr>
+          </thead>
+          <tbody id="recItemsList" class="divide-y divide-slate-100">
+            <!-- Dynamic Items -->
+          </tbody>
+        </table>
+
+        <div class="space-y-1 text-right pt-1 font-semibold">
+          <div class="flex justify-between"><span>Subtotal:</span><span id="recSubtotal">K0.00</span></div>
+          <div class="flex justify-between text-rose-600"><span>Discount:</span><span id="recDiscount">-K0.00</span></div>
+          <div class="flex justify-between text-sm font-bold border-t border-slate-400 pt-1"><span>TOTAL:</span><span id="recTotal">K0.00</span></div>
+        </div>
+
+        <div class="text-center pt-4 border-t border-slate-200 text-[10px] text-slate-500">
+          <p id="recFooterMsg">Thank you for your business!</p>
+          <p class="mt-1 font-sans text-[8px] text-slate-400">Powered by SmartTill Zambia</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= JAVASCRIPT & FIREBASE MODULE ================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      get, 
+      push, 
+      update, 
+      remove, 
+      onValue, 
+      runTransaction 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // 2. FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyC7ycFAaH4pEEbuaoZ76-UO2Ae0JEeBNqs",
+      authDomain: "hb-connect-f42d8.firebaseapp.com",
+      databaseURL: "https://hb-connect-f42d8-default-rtdb.firebaseio.com",
+      projectId: "hb-connect-f42d8",
+      storageBucket: "hb-connect-f42d8.firebasestorage.app",
+      messagingSenderId: "652667176456",
+      appId: "1:652667176456:web:1ae1f50177c864321173bd"
+    };
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Global App State
+    window.currentUser = null;
+    window.cart = [];
+    window.productsData = {};
+    window.salesData = {};
+    window.customersData = {};
+    window.expensesData = {};
+    window.staffData = {};
+    window.settingsData = {
+      businessName: 'SmartTill Business',
+      phone: '',
+      address: '',
+      tpin: '',
+      currency: 'ZMW (K)',
+      receiptFooter: 'Thank you for shopping with us!'
+    };
+    let html5QrCode = null;
+
+    // ================= AUTHENTICATION HANDLERS =================
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.currentUser = user;
+        document.getElementById('authContainer').classList.add('hidden');
+        document.getElementById('appLayout').classList.remove('hidden');
+        document.getElementById('userEmailDisplay').textContent = user.email;
+        document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+        
+        // Listen to User Workspace Database Updates
+        attachDatabaseListeners(user.uid);
+      } else {
+        window.currentUser = null;
+        document.getElementById('authContainer').classList.remove('hidden');
+        document.getElementById('appLayout').classList.add('hidden');
+      }
+    });
+
+    window.handleLogin = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) return alert('Please enter both email and password.');
+
+      const btn = document.getElementById('btnLogin');
+      btn.innerText = 'Authenticating...';
+      btn.disabled = true;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert('Login failed: ' + err.message);
+      } finally {
+        btn.innerText = 'Sign In';
+        btn.disabled = false;
+      }
+    };
+
+    window.handleRegister = async function() {
+      const bName = document.getElementById('regBusinessName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      if (!bName || !email || !password) return alert('Please fill in all registration fields.');
+
+      const btn = document.getElementById('btnRegister');
+      btn.innerText = 'Creating Workspace...';
+      btn.disabled = true;
+
+      try {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = res.user.uid;
+        
+        // Initialize default settings in Realtime Database
+        await set(ref(db, `smarttill/${uid}/settings`), {
+          businessName: bName,
+          phone: '',
+          address: 'Lusaka, Zambia',
+          tpin: '',
+          currency: 'ZMW (K)',
+          receiptFooter: 'Thank you for shopping with us!'
+        });
+      } catch (err) {
+        alert('Registration failed: ' + err.message);
+      } finally {
+        btn.innerText = 'Create Business Workspace';
+        btn.disabled = false;
+      }
+    };
+
+    window.showForgotPassword = async function() {
+      const email = prompt('Enter your email address to receive password reset link:');
+      if (email) {
+        try {
+          await sendPasswordResetEmail(auth, email);
+          alert('Password reset link sent to your email.');
+        } catch (e) {
+          alert('Error: ' + e.message);
+        }
+      }
+    };
+
+    window.handleLogout = function() {
+      if (confirm('Are you sure you want to log out of SmartTill?')) {
+        signOut(auth);
+      }
+    };
+
+    window.toggleAuthMode = function(mode) {
+      if (mode === 'register') {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.remove('hidden');
+      } else {
+        document.getElementById('registerForm').classList.add('hidden');
+        document.getElementById('loginForm').classList.remove('hidden');
+      }
+    };
+
+    // ================= REALTIME DATABASE LISTENERS =================
+
+    function attachDatabaseListeners(uid) {
+      const basePath = `smarttill/${uid}`;
+
+      // Settings
+      onValue(ref(db, `${basePath}/settings`), (snapshot) => {
+        if (snapshot.exists()) {
+          window.settingsData = snapshot.val();
+          document.getElementById('sidebarBusinessName').textContent = window.settingsData.businessName || 'SmartTill';
+          document.getElementById('currencyDisplay').textContent = window.settingsData.currency || 'ZMW (K)';
+          populateSettingsForm();
+        }
+      });
+
+      // Products
+      onValue(ref(db, `${basePath}/products`), (snapshot) => {
+        window.productsData = snapshot.val() || {};
+        renderProductsTable();
+        renderPosCatalog();
+        updateDashboardMetrics();
+      });
+
+      // Sales
+      onValue(ref(db, `${basePath}/sales`), (snapshot) => {
+        window.salesData = snapshot.val() || {};
+        renderSalesHistory();
+        updateDashboardMetrics();
+        renderReports();
+      });
+
+      // Customers
+      onValue(ref(db, `${basePath}/customers`), (snapshot) => {
+        window.customersData = snapshot.val() || {};
+        renderCustomersTable();
+        populatePosCustomerDropdown();
+      });
+
+      // Expenses
+      onValue(ref(db, `${basePath}/expenses`), (snapshot) => {
+        window.expensesData = snapshot.val() || {};
+        renderExpensesTable();
+        renderReports();
+      });
+
+      // Staff
+      onValue(ref(db, `${basePath}/staff`), (snapshot) => {
+        window.staffData = snapshot.val() || {};
+        renderStaffTable();
+      });
+    }
+
+    // ================= NAVIGATION VIEW SWITCHER =================
+
+    window.switchView = function(viewName) {
+      // Hide all views
+      const views = ['dashboard', 'pos', 'products', 'sales', 'customers', 'expenses', 'reports', 'staff', 'settings'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+        const nav = document.getElementById(`nav-${v}`);
+        if (nav) nav.classList.remove('bg-slate-800', 'text-white');
+      });
+
+      // Show selected
+      const selected = document.getElementById(`view-${viewName}`);
+      if (selected) selected.classList.remove('hidden');
+      const selectedNav = document.getElementById(`nav-${viewName}`);
+      if (selectedNav) selectedNav.classList.add('bg-slate-800', 'text-white');
+
+      // Update Header Title
+      document.getElementById('pageTitle').textContent = viewName.toUpperCase();
+    };
+
+    // ================= DASHBOARD METRICS =================
+
+    function updateDashboardMetrics() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      let todayRev = 0;
+      let todayCount = 0;
+      let todayGrossProfit = 0;
+
+      // Calculate Sales
+      const salesArr = Object.values(window.salesData);
+      const recentSales = [];
+
+      salesArr.forEach(sale => {
+        const sDate = new Date(sale.timestamp).toISOString().split('T')[0];
+        if (sDate === todayStr) {
+          todayRev += (sale.grandTotal || 0);
+          todayCount++;
+          todayGrossProfit += (sale.totalProfit || 0);
+        }
+        recentSales.push(sale);
+      });
+
+      recentSales.sort((a,b) => b.timestamp - a.timestamp);
+
+      document.getElementById('dashTodayRevenue').textContent = `K${todayRev.toFixed(2)}`;
+      document.getElementById('dashTodayTxnCount').textContent = todayCount;
+      document.getElementById('dashGrossProfit').textContent = `K${todayGrossProfit.toFixed(2)}`;
+
+      // Calculate Low Stock
+      const productsArr = Object.values(window.productsData);
+      let lowStockCount = 0;
+      productsArr.forEach(p => {
+        if ((p.stock || 0) <= (p.minStock || 5)) lowStockCount++;
+      });
+      document.getElementById('dashLowStockCount').textContent = lowStockCount;
+
+      // Render Recent Table
+      const recentTbody = document.getElementById('dashRecentSalesTable');
+      if (recentSales.length === 0) {
+        recentTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400">No transactions recorded.</td></tr>';
+      } else {
+        recentTbody.innerHTML = recentSales.slice(0, 5).map(s => `
+          <tr>
+            <td class="py-2.5 px-3 font-semibold text-brand-blue">${s.receiptNo}</td>
+            <td class="py-2.5 px-3 text-slate-500">${new Date(s.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+            <td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-medium">${s.paymentMethod}</span></td>
+            <td class="py-2.5 px-3 text-right font-bold text-slate-800">K${s.grandTotal.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // ================= POINT OF SALE (POS) =================
+
+    window.renderPosCatalog = function() {
+      const query = document.getElementById('posSearchInput').value.toLowerCase();
+      const grid = document.getElementById('posCatalogGrid');
+      grid.innerHTML = '';
+
+      const products = Object.entries(window.productsData);
+      const filtered = products.filter(([id, p]) => 
+        p.name.toLowerCase().includes(query) || 
+        (p.category && p.category.toLowerCase().includes(query)) ||
+        (p.barcode && p.barcode.toLowerCase().includes(query))
+      );
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs">No matching products found.</div>';
+        return;
+      }
+
+      filtered.forEach(([id, p]) => {
+        const isOut = p.stock <= 0;
+        const card = document.createElement('div');
+        card.className = `bg-white p-3 rounded-xl border ${isOut ? 'border-slate-200 opacity-60' : 'border-slate-200 hover:border-brand-blue cursor-pointer'} shadow-sm flex flex-col justify-between transition`;
+        card.onclick = () => { if (!isOut) addToCart(id, p); };
+
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${p.category || 'General'}</span>
+              <span class="text-[10px] ${isOut ? 'text-rose-600 font-bold' : 'text-slate-400'}">Stock: ${p.stock}</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-xs mt-1.5 leading-snug line-clamp-2">${p.name}</h4>
+          </div>
+          <div class="mt-3 flex items-center justify-between pt-2 border-t border-slate-100">
+            <span class="font-bold text-brand-blue text-sm">K${p.sellingPrice.toFixed(2)}</span>
+            <button class="w-7 h-7 rounded-lg bg-blue-50 text-brand-blue flex items-center justify-center hover:bg-brand-blue hover:text-white transition">
+              <i class="fa-solid fa-plus text-xs"></i>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    };
+
+    function addToCart(id, product) {
+      const existing = window.cart.find(item => item.id === id);
+      if (existing) {
+        if (existing.qty + 1 > product.stock) {
+          return alert(`Cannot add more. Available stock for ${product.name} is ${product.stock}.`);
+        }
+        existing.qty++;
+      } else {
+        if (product.stock < 1) return alert('Item out of stock.');
+        window.cart.push({
+          id: id,
+          name: product.name,
+          costPrice: product.costPrice || 0,
+          sellingPrice: product.sellingPrice,
+          qty: 1,
+          maxStock: product.stock
+        });
+      }
+      renderCart();
+    }
+
+    window.renderCart = function() {
+      const list = document.getElementById('posCartList');
+      if (window.cart.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-12 text-slate-400 text-xs">
+            <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-slate-300"></i>
+            <p>Cart is empty. Select products from the left catalog.</p>
+          </div>`;
+        updateCartTotals();
+        return;
+      }
+
+      list.innerHTML = window.cart.map((item, idx) => `
+        <div class="py-2.5 flex items-center justify-between">
+          <div class="flex-1 pr-2">
+            <h5 class="font-bold text-slate-800 text-xs truncate">${item.name}</h5>
+            <span class="text-[11px] text-slate-500">K${item.sellingPrice.toFixed(2)} each</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50">
+              <button onclick="updateCartQty(${idx}, -1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-200 text-xs font-bold">-</button>
+              <span class="px-2 text-xs font-bold text-slate-800">${item.qty}</span>
+              <button onclick="updateCartQty(${idx}, 1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-200 text-xs font-bold">+</button>
+            </div>
+            <span class="font-bold text-xs text-slate-800 w-14 text-right">K${(item.sellingPrice * item.qty).toFixed(2)}</span>
+            <button onclick="removeFromCart(${idx})" class="text-slate-400 hover:text-rose-600 text-xs"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+
+      updateCartTotals();
+    };
+
+    window.updateCartQty = function(idx, delta) {
+      const item = window.cart[idx];
+      if (delta > 0 && item.qty + delta > item.maxStock) {
+        return alert(`Stock limit reached. Max available: ${item.maxStock}`);
+      }
+      item.qty += delta;
+      if (item.qty <= 0) window.cart.splice(idx, 1);
+      renderCart();
+    };
+
+    window.removeFromCart = function(idx) {
+      window.cart.splice(idx, 1);
+      renderCart();
+    };
+
+    window.clearCart = function() {
+      window.cart = [];
+      renderCart();
+    };
+
+    window.updateCartTotals = function() {
+      const subtotal = window.cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0);
+      const discount = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+      const grandTotal = Math.max(0, subtotal - discount);
+
+      document.getElementById('posSubtotalText').textContent = `K${subtotal.toFixed(2)}`;
+      document.getElementById('posDiscountText').textContent = `-K${discount.toFixed(2)}`;
+      document.getElementById('posGrandTotalText').textContent = `K${grandTotal.toFixed(2)}`;
+    };
+
+    window.togglePayRefField = function() {
+      const method = document.getElementById('posPaymentMethod').value;
+      const refCont = document.getElementById('posPayRefContainer');
+      if (method === 'Cash') {
+        refCont.classList.add('hidden');
+      } else {
+        refCont.classList.remove('hidden');
+      }
+    };
+
+    // CHECKOUT PROCESSOR WITH ATOMIC TRANSACTIONS
+    window.processCheckout = async function() {
+      if (window.cart.length === 0) return alert('Cart is empty.');
+      if (!window.currentUser) return alert('Authenticated session required.');
+
+      const customerSelect = document.getElementById('posCustomerSelect');
+      const customerName = customerSelect.value || 'Walk-in Customer';
+      const paymentMethod = document.getElementById('posPaymentMethod').value;
+      const payRef = document.getElementById('posPayReference').value.trim();
+      const discount = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+
+      const subtotal = window.cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0);
+      const grandTotal = Math.max(0, subtotal - discount);
+
+      // Calculate Est. Gross Profit for Sale
+      const totalCost = window.cart.reduce((sum, item) => sum + ((item.costPrice || 0) * item.qty), 0);
+      const totalProfit = grandTotal - totalCost;
+
+      const receiptNo = 'REC-' + Math.floor(100000 + Math.random() * 900000);
+      const timestamp = Date.now();
+
+      const btn = document.getElementById('btnCheckout');
+      btn.innerText = 'Processing Till Sale...';
+      btn.disabled = true;
+
+      try {
+        const uid = window.currentUser.uid;
+
+        // 1. Safe Atomic Stock Deduction
+        for (const item of window.cart) {
+          const productStockRef = ref(db, `smarttill/${uid}/products/${item.id}/stock`);
+          await runTransaction(productStockRef, (currentStock) => {
+            if (currentStock === null) return 0;
+            if (currentStock < item.qty) {
+              throw new Error(`Insufficient stock for ${item.name}`);
+            }
+            return currentStock - item.qty;
+          });
+        }
+
+        // 2. Save Sale Transaction
+        const saleRecord = {
+          receiptNo,
+          timestamp,
+          customerName,
+          items: window.cart,
+          subtotal,
+          discount,
+          grandTotal,
+          totalProfit,
+          paymentMethod,
+          paymentReference: payRef
+        };
+
+        const newSaleRef = push(ref(db, `smarttill/${uid}/sales`));
+        await set(newSaleRef, saleRecord);
+
+        // Clear Cart & Render Receipt
+        displayPrintableReceipt(saleRecord);
+        clearCart();
+        document.getElementById('posDiscountInput').value = 0;
+        document.getElementById('posPayReference').value = '';
+      } catch (err) {
+        alert('Transaction Failed: ' + err.message);
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i><span>Complete Till Sale</span>';
+        btn.disabled = false;
+      }
+    };
+
+    function displayPrintableReceipt(sale) {
+      document.getElementById('recBusinessName').textContent = window.settingsData.businessName || 'SMARTTILL ZAMBIA';
+      document.getElementById('recAddress').textContent = window.settingsData.address || 'Lusaka, Zambia';
+      document.getElementById('recPhone').textContent = `Tel: ${window.settingsData.phone || '+260 970 000000'}`;
+      document.getElementById('recTPIN').textContent = `TPIN: ${window.settingsData.tpin || '1000000000'}`;
+      
+      document.getElementById('recNumber').textContent = sale.receiptNo;
+      document.getElementById('recDate').textContent = new Date(sale.timestamp).toLocaleString();
+      document.getElementById('recCustomer').textContent = sale.customerName;
+      document.getElementById('recPayment').textContent = sale.paymentMethod;
+
+      if (sale.paymentReference) {
+        document.getElementById('recRefRow').classList.remove('hidden');
+        document.getElementById('recRef').textContent = sale.paymentReference;
+      } else {
+        document.getElementById('recRefRow').classList.add('hidden');
+      }
+
+      const itemsBody = document.getElementById('recItemsList');
+      itemsBody.innerHTML = sale.items.map(i => `
+        <tr class="text-[10px]">
+          <td class="py-1">${i.name}</td>
+          <td class="py-1 text-center">${i.qty}</td>
+          <td class="py-1 text-right">K${(i.sellingPrice * i.qty).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('recSubtotal').textContent = `K${sale.subtotal.toFixed(2)}`;
+      document.getElementById('recDiscount').textContent = `-K${sale.discount.toFixed(2)}`;
+      document.getElementById('recTotal').textContent = `K${sale.grandTotal.toFixed(2)}`;
+      document.getElementById('recFooterMsg').textContent = window.settingsData.receiptFooter || 'Thank you!';
+
+      openModal('receiptModal');
+    }
+
+    // ================= BARCODE CAMERA SCANNER =================
+
+    window.openBarcodeScanner = function() {
+      openModal('scannerModal');
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          document.getElementById('posSearchInput').value = decodedText;
+          renderPosCatalog();
+          closeBarcodeScanner();
+        },
+        () => {}
+      ).catch(err => alert("Camera access failed: Ensure HTTPS or localhost protocol is active."));
+    };
+
+    window.closeBarcodeScanner = function() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          closeModal('scannerModal');
+        }).catch(() => closeModal('scannerModal'));
+      } else {
+        closeModal('scannerModal');
+      }
+    };
+
+    // ================= PRODUCTS CRUD =================
+
+    window.openAddProductModal = function() {
+      document.getElementById('productForm').reset();
+      document.getElementById('prodId').value = '';
+      document.getElementById('productModalTitle').textContent = 'Add New Product';
+      openModal('productModal');
+    };
+
+    window.openEditProductModal = function(id) {
+      const p = window.productsData[id];
+      if (!p) return;
+      document.getElementById('prodId').value = id;
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodCategory').value = p.category || '';
+      document.getElementById('prodBarcode').value = p.barcode || '';
+      document.getElementById('prodCost').value = p.costPrice || 0;
+      document.getElementById('prodPrice').value = p.sellingPrice || 0;
+      document.getElementById('prodStock').value = p.stock || 0;
+      document.getElementById('prodMinStock').value = p.minStock || 5;
+
+      document.getElementById('productModalTitle').textContent = 'Edit Product';
+      openModal('productModal');
+    };
+
+    window.handleSaveProduct = async function(e) {
+      e.preventDefault();
+      const id = document.getElementById('prodId').value;
+      const name = document.getElementById('prodName').value.trim();
+      const category = document.getElementById('prodCategory').value.trim();
+      const barcode = document.getElementById('prodBarcode').value.trim();
+      const costPrice = parseFloat(document.getElementById('prodCost').value) || 0;
+      const sellingPrice = parseFloat(document.getElementById('prodPrice').value) || 0;
+      const stock = parseInt(document.getElementById('prodStock').value) || 0;
+      const minStock = parseInt(document.getElementById('prodMinStock').value) || 5;
+
+      const payload = { name, category, barcode, costPrice, sellingPrice, stock, minStock };
+      const uid = window.currentUser.uid;
+
+      if (id) {
+        await update(ref(db, `smarttill/${uid}/products/${id}`), payload);
+      } else {
+        await push(ref(db, `smarttill/${uid}/products`), payload);
+      }
+
+      closeModal('productModal');
+    };
+
+    window.deleteProduct = async function(id) {
+      if (confirm('Are you sure you want to delete this product?')) {
+        await remove(ref(db, `smarttill/${window.currentUser.uid}/products/${id}`));
+      }
+    };
+
+    window.renderProductsTable = function() {
+      const query = document.getElementById('productSearchInput').value.toLowerCase();
+      const catFilter = document.getElementById('productCategoryFilter').value;
+      const tbody = document.getElementById('productsTableBody');
+      tbody.innerHTML = '';
+
+      const products = Object.entries(window.productsData);
+
+      // Populate Category Dropdown dynamically
+      const categories = new Set(products.map(([_, p]) => p.category).filter(Boolean));
+      const catSelect = document.getElementById('productCategoryFilter');
+      catSelect.innerHTML = '<option value="ALL">All Categories</option>' + 
+        Array.from(categories).map(c => `<option value="${c}">${c}</option>`).join('');
+      catSelect.value = catFilter;
+
+      const filtered = products.filter(([_, p]) => {
+        const matchesQuery = p.name.toLowerCase().includes(query) || (p.barcode && p.barcode.toLowerCase().includes(query));
+        const matchesCat = (catFilter === 'ALL' || p.category === catFilter);
+        return matchesQuery && matchesCat;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">No products available.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(([id, p]) => {
+        const unitProfit = p.sellingPrice - (p.costPrice || 0);
+        const isLow = p.stock <= (p.minStock || 5);
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-slate-800">${p.name}</td>
+            <td class="py-3 px-4 text-slate-500">${p.barcode || 'N/A'}</td>
+            <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px]">${p.category || 'General'}</span></td>
+            <td class="py-3 px-4 text-right">K${(p.costPrice || 0).toFixed(2)}</td>
+            <td class="py-3 px-4 text-right font-semibold text-brand-blue">K${p.sellingPrice.toFixed(2)}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded font-bold ${isLow ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
+                ${p.stock}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right font-medium text-emerald-600">+K${unitProfit.toFixed(2)}</td>
+            <td class="py-3 px-4 text-center space-x-2">
+              <button onclick="openEditProductModal('${id}')" class="text-blue-600 hover:underline"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="deleteProduct('${id}')" class="text-rose-600 hover:underline"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    };
+
+    // ================= SALES HISTORY =================
+
+    window.renderSalesHistory = function() {
+      const query = document.getElementById('salesSearchInput').value.toLowerCase();
+      const dateFilter = document.getElementById('salesDateFilter').value;
+      const tbody = document.getElementById('salesHistoryTableBody');
+      tbody.innerHTML = '';
+
+      const sales = Object.entries(window.salesData);
+      sales.sort((a,b) => b[1].timestamp - a[1].timestamp);
+
+      const filtered = sales.filter(([_, s]) => {
+        const matchesQuery = s.receiptNo.toLowerCase().includes(query) || (s.customerName && s.customerName.toLowerCase().includes(query));
+        const sDate = new Date(s.timestamp).toISOString().split('T')[0];
+        const matchesDate = !dateFilter || sDate === dateFilter;
+        return matchesQuery && matchesDate;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">No sales transactions found.</td></tr>';
+        return;
+      }
+
+      filtered.forEach(([id, s]) => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-brand-blue">${s.receiptNo}</td>
+            <td class="py-3 px-4 text-slate-500">${new Date(s.timestamp).toLocaleString()}</td>
+            <td class="py-3 px-4 font-medium text-slate-700">${s.customerName || 'Walk-in'}</td>
+            <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px]">${s.paymentMethod}</span></td>
+            <td class="py-3 px-4 text-right font-bold text-slate-900">K${s.grandTotal.toFixed(2)}</td>
+            <td class="py-3 px-4 text-right font-medium text-emerald-600">+K${(s.totalProfit || 0).toFixed(2)}</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick='reprintSaleReceipt(${JSON.stringify(s)})' class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-xs font-semibold">
+                <i class="fa-solid fa-print"></i> Reprint
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    };
+
+    window.reprintSaleReceipt = function(sale) {
+      displayPrintableReceipt(sale);
+    };
+
+    // ================= CUSTOMERS CRUD =================
+
+    window.openCustomerModal = function() {
+      openModal('customerModal');
+    };
+
+    window.handleSaveCustomer = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const email = document.getElementById('custEmail').value.trim();
+      const address = document.getElementById('custAddress').value.trim();
+
+      await push(ref(db, `smarttill/${window.currentUser.uid}/customers`), { name, phone, email, address });
+      closeModal('customerModal');
+    };
+
+    function renderCustomersTable() {
+      const tbody = document.getElementById('customersTableBody');
+      tbody.innerHTML = '';
+
+      const customers = Object.values(window.customersData);
+      if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No registered customers.</td></tr>';
+        return;
+      }
+
+      customers.forEach(c => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-slate-800">${c.name}</td>
+            <td class="py-3 px-4 text-slate-500">${c.phone || 'N/A'}</td>
+            <td class="py-3 px-4 text-slate-500">${c.email || 'N/A'}</td>
+            <td class="py-3 px-4 text-slate-500">${c.address || 'N/A'}</td>
+            <td class="py-3 px-4 text-right font-bold text-slate-900">K0.00</td>
+          </tr>
+        `;
+      });
+    }
+
+    function populatePosCustomerDropdown() {
+      const select = document.getElementById('posCustomerSelect');
+      select.innerHTML = '<option value="">Walk-in Customer</option>' + 
+        Object.values(window.customersData).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+
+    // ================= EXPENSES CRUD =================
+
+    window.openAddExpenseModal = function() {
+      document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+      openModal('expenseModal');
+    };
+
+    window.handleSaveExpense = async function(e) {
+      e.preventDefault();
+      const title = document.getElementById('expTitle').value.trim();
+      const category = document.getElementById('expCategory').value.trim();
+      const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+      const date = document.getElementById('expDate').value;
+      const paymentMethod = document.getElementById('expPaymentMethod').value;
+
+      await push(ref(db, `smarttill/${window.currentUser.uid}/expenses`), { title, category, amount, date, paymentMethod });
+      closeModal('expenseModal');
+    };
+
+    function renderExpensesTable() {
+      const tbody = document.getElementById('expensesTableBody');
+      tbody.innerHTML = '';
+
+      const expenses = Object.entries(window.expensesData);
+      let totalExp = 0;
+
+      if (expenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">No business expenses recorded.</td></tr>';
+      } else {
+        expenses.forEach(([id, e]) => {
+          totalExp += e.amount;
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 px-4 font-bold text-slate-800">${e.title}</td>
+              <td class="py-3 px-4"><span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded text-[10px] font-semibold">${e.category}</span></td>
+              <td class="py-3 px-4 text-slate-500">${e.date}</td>
+              <td class="py-3 px-4 text-slate-500">${e.paymentMethod}</td>
+              <td class="py-3 px-4 text-right font-bold text-rose-600">K${e.amount.toFixed(2)}</td>
+              <td class="py-3 px-4 text-center">
+                <button onclick="deleteExpense('${id}')" class="text-rose-600 hover:underline"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      document.getElementById('totalExpenseSummary').textContent = `K${totalExp.toFixed(2)}`;
+    }
+
+    window.deleteExpense = async function(id) {
+      if (confirm('Delete this expense entry?')) {
+        await remove(ref(db, `smarttill/${window.currentUser.uid}/expenses/${id}`));
+      }
+    };
+
+    // ================= REPORTS & ANALYTICS =================
+
+    function renderReports() {
+      const sales = Object.values(window.salesData);
+      const expenses = Object.values(window.expensesData);
+      const products = Object.values(window.productsData);
+
+      const totalRev = sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0);
+      const grossProfit = sales.reduce((sum, s) => sum + (s.totalProfit || 0), 0);
+      const totalExp = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const netProfit = grossProfit - totalExp;
+
+      document.getElementById('repTotalRevenue').textContent = `K${totalRev.toFixed(2)}`;
+      document.getElementById('repGrossProfit').textContent = `K${grossProfit.toFixed(2)}`;
+      document.getElementById('repTotalExpenses').textContent = `K${totalExp.toFixed(2)}`;
+      document.getElementById('repNetProfit').textContent = `K${netProfit.toFixed(2)}`;
+
+      // Inventory Valuations
+      const costVal = products.reduce((sum, p) => sum + ((p.costPrice || 0) * (p.stock || 0)), 0);
+      const retailVal = products.reduce((sum, p) => sum + ((p.sellingPrice || 0) * (p.stock || 0)), 0);
+
+      document.getElementById('repInventoryCostVal').textContent = `K${costVal.toFixed(2)}`;
+      document.getElementById('repInventoryRetailVal').textContent = `K${retailVal.toFixed(2)}`;
+    }
+
+    window.exportSalesCSV = function() {
+      const sales = Object.values(window.salesData);
+      if (sales.length === 0) return alert('No sales data available for export.');
+
+      let csv = 'Receipt No,Timestamp,Customer,Payment Method,Subtotal,Discount,Grand Total,Profit\n';
+      sales.forEach(s => {
+        csv += `"${s.receiptNo}","${new Date(s.timestamp).toLocaleString()}","${s.customerName}","${s.paymentMethod}",${s.subtotal},${s.discount},${s.grandTotal},${s.totalProfit}\n`;
+      });
+
+      downloadFile(csv, 'SmartTill_Sales_Report.csv', 'text/csv');
+    };
+
+    window.exportBackupJSON = function() {
+      const backup = {
+        settings: window.settingsData,
+        products: window.productsData,
+        sales: window.salesData,
+        customers: window.customersData,
+        expenses: window.expensesData,
+        staff: window.staffData
+      };
+
+      downloadFile(JSON.stringify(backup, null, 2), 'SmartTill_Database_Backup.json', 'application/json');
+    };
+
+    function downloadFile(content, fileName, mimeType) {
+      const a = document.createElement('a');
+      const blob = new Blob([content], { type: mimeType });
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+    }
+
+    // ================= STAFF MANAGEMENT =================
+
+    window.openStaffModal = function() {
+      openModal('staffModal');
+    };
+
+    window.handleSaveStaff = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('stfName').value.trim();
+      const email = document.getElementById('stfEmail').value.trim();
+      const phone = document.getElementById('stfPhone').value.trim();
+      const role = document.getElementById('stfRole').value;
+
+      await push(ref(db, `smarttill/${window.currentUser.uid}/staff`), { name, email, phone, role, status: 'Active' });
+      closeModal('staffModal');
+    };
+
+    function renderStaffTable() {
+      const tbody = document.getElementById('staffTableBody');
+      tbody.innerHTML = '';
+
+      const staff = Object.values(window.staffData);
+      if (staff.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No staff members assigned.</td></tr>';
+        return;
+      }
+
+      staff.forEach(s => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-slate-800">${s.name}</td>
+            <td class="py-3 px-4 text-slate-500">${s.email}</td>
+            <td class="py-3 px-4 text-slate-500">${s.phone || 'N/A'}</td>
+            <td class="py-3 px-4"><span class="bg-blue-50 text-brand-blue font-bold px-2 py-0.5 rounded text-[10px]">${s.role}</span></td>
+            <td class="py-3 px-4"><span class="text-emerald-600 font-bold text-xs">${s.status}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    // ================= SETTINGS =================
+
+    function populateSettingsForm() {
+      document.getElementById('setBusinessName').value = window.settingsData.businessName || '';
+      document.getElementById('setPhone').value = window.settingsData.phone || '';
+      document.getElementById('setAddress').value = window.settingsData.address || '';
+      document.getElementById('setTPIN').value = window.settingsData.tpin || '';
+      document.getElementById('setCurrency').value = window.settingsData.currency || 'ZMW (K)';
+      document.getElementById('setReceiptFooter').value = window.settingsData.receiptFooter || '';
+    }
+
+    window.saveBusinessSettings = async function() {
+      const businessName = document.getElementById('setBusinessName').value.trim();
+      const phone = document.getElementById('setPhone').value.trim();
+      const address = document.getElementById('setAddress').value.trim();
+      const tpin = document.getElementById('setTPIN').value.trim();
+      const currency = document.getElementById('setCurrency').value.trim();
+      const receiptFooter = document.getElementById('setReceiptFooter').value.trim();
+
+      const payload = { businessName, phone, address, tpin, currency, receiptFooter };
+      await set(ref(db, `smarttill/${window.currentUser.uid}/settings`), payload);
+      alert('Business Settings updated successfully.');
+    };
+
+    // ================= UTILS & MODAL CONTROLLERS =================
+
+    window.openModal = function(id) {
+      document.getElementById(id).classList.remove('hidden');
+    };
+
+    window.closeModal = function(id) {
+      document.getElementById(id).classList.add('hidden');
+    };
+
+  </script>
+</body>
+</html>
